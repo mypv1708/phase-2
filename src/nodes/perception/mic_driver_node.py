@@ -2,12 +2,12 @@ import logging
 import sys
 
 import numpy as np
-from eff_word_net.engine import HotwordDetector
+# from eff_word_net.engine import HotwordDetector  # Commented: wake-word disabled
 from libdf import DF
 
 from .mic_driver.model_loader import load_all_models
 from .mic_driver.recording import run_recording_loop
-from .mic_driver.wake_word import wait_for_wake_word
+# from .mic_driver.wake_word import wait_for_wake_word  # Commented: wake-word disabled
 from .speech_recognition_node import SpeechRecognitionNode
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class MicDriverNode:
     def __init__(self):
         """
         Initialize MicDriverNode with perception pipeline:
-        - Wake word detection
+        - Wake word detection (DISABLED)
         - Audio recording
         - Audio enhancement
         - Speaker verification
@@ -25,13 +25,13 @@ class MicDriverNode:
         """
         logger.info("Initializing MicDriverNode...")
         try:
-            # Load perception models (wake word, audio enhancement)
+            # Load perception models (audio enhancement only, wake-word disabled)
             (
                 self.model,
                 self.df_state,
                 self.target_sr,
                 self.device,
-                self.wake_word_detector,
+                self.wake_word_detector,  # Will be None (wake-word disabled)
             ) = load_all_models()
             
             # Initialize speech recognition (STT + Speaker verification)
@@ -43,17 +43,20 @@ class MicDriverNode:
             raise
 
     def run(self) -> None:
-        logger.info("Starting mic driver main loop...")
+        logger.info("Starting mic driver main loop (wake-word disabled)...")
         try:
             while True:
-                logger.debug("Waiting for wake word...")
-                detected = wait_for_wake_word(self.wake_word_detector)
+                # Wake-word detection disabled - start recording directly
+                # logger.debug("Waiting for wake word...")
+                # detected = wait_for_wake_word(self.wake_word_detector)
+                # 
+                # if not detected:
+                #     logger.debug("Wake word detection cancelled or failed")
+                #     continue
+                # 
+                # logger.info("Wake word detected! Starting recording loop...")
                 
-                if not detected:
-                    logger.debug("Wake word detection cancelled or failed")
-                    continue
-                
-                logger.info("Wake word detected! Starting recording loop...")
+                logger.info("Starting recording loop (wake-word bypassed)...")
                 result = run_recording_loop(
                     model=self.model,
                     df_state=self.df_state,

@@ -8,6 +8,8 @@ pip install --upgrade pip
 # 2. Install system dependencies
 sudo apt update
 sudo apt install -y build-essential portaudio19-dev python3-dev sox libsox-fmt-all
+apt install -y sox libsox-fmt-all
+
 
 # 3. Install PyTorch (CUDA 11.8)
 pip install torch==2.4.1+cu118 torchaudio==2.4.1+cu118 --index-url https://download.pytorch.org/whl/cu118
