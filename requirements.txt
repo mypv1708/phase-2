@@ -1,0 +1,15 @@
+EfficientWord-Net
+tflite-runtime
+librosa
+pyaudio
+webrtcvad
+sounddevice
+scipy
+deepfilternet
+speechbrain==1.0.3
+huggingface_hub
+numpy==1.23.5
+requests==2.27.0
+soundfile
+faster-whisper
+transformers
