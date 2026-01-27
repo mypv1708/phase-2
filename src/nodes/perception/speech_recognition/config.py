@@ -16,6 +16,6 @@ STT_SAMPLE_RATE = 16000
 STT_DEVICE = None  # None = auto-detect (cuda if available, else cpu)
 STT_LANGUAGE = "vi"  # "vi" for Vietnamese (PhoWhisper is optimized for Vietnamese)
 STT_TASK = "transcribe"  # "transcribe" or "translate"
-STT_NUM_BEAMS = 4  # Beam search size (1 = greedy/fastest, 5 = default/slower)
+STT_NUM_BEAMS = 5  # Beam search size (1 = greedy/fastest, 5 = default/slower)
 STT_MAX_NEW_TOKENS = 128  # Maximum tokens to generate
 STT_USE_FP16 = True  # Use FP16 for GPU (faster, less memory)

@@ -3,11 +3,11 @@ import time
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import soundfile as sf
+# import soundfile as sf  # Commented: file saving disabled
 import torch
 from df.enhance import enhance
 
-from .audio import save_wave
+# from .audio import save_wave  # Commented: file saving disabled
 from .config import FRAME_DURATION_MS, INT16_MAX, MILLISECONDS_PER_SECOND
 
 from libdf import DF
@@ -45,12 +45,13 @@ def enhance_utterance(
         raise ValueError("recorded_frames cannot be empty")
 
     # Save raw audio if requested (non-blocking - failures are logged but don't stop processing)
-    if raw_filepath:
-        try:
-            save_wave(recorded_frames, raw_filepath)
-            logger.info("Saved raw audio: %s", raw_filepath)
-        except Exception:
-            logger.exception("Failed to save raw audio")
+    # Commented: file saving disabled
+    # if raw_filepath:
+    #     try:
+    #         save_wave(recorded_frames, raw_filepath)
+    #         logger.info("Saved raw audio: %s", raw_filepath)
+    #     except Exception:
+    #         logger.exception("Failed to save raw audio")
 
     # Convert frames to tensor
     audio_tensor = convert_frames_to_tensor(recorded_frames)
@@ -129,11 +130,13 @@ def enhance_utterance(
         pass  # Ignore if model has no parameters
 
     # Save enhanced audio if requested (non-blocking - failures are logged but don't stop processing)
-    if enhanced_filepath:
-        try:
-            sf.write(enhanced_filepath, enhanced_np, target_sr)
-            logger.info("Saved enhanced audio: %s", enhanced_filepath)
-        except Exception:
-            logger.exception("Failed to save enhanced audio")
+    # Commented: file saving disabled
+    # if enhanced_filepath:
+    #     try:
+    #         import soundfile as sf
+    #         sf.write(enhanced_filepath, enhanced_np, target_sr)
+    #         logger.info("Saved enhanced audio: %s", enhanced_filepath)
+    #     except Exception:
+    #         logger.exception("Failed to save enhanced audio")
 
     return enhanced_np, target_sr, raw_filepath, enhanced_filepath
