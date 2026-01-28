@@ -21,7 +21,7 @@ from .config import (
 )
 from .audio import init_audio_stream
 from .enhance import enhance_utterance
-# from .paths import build_filenames, ensure_output_paths  # Commented: file saving disabled
+from .paths import build_filenames, ensure_output_paths
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +75,9 @@ def run_recording_loop(
                 _reset_recording_state()
                 return
 
-            # File saving disabled - pass None for filepaths
-            # today = time.strftime(DATE_FMT)
-            # ensure_output_paths(today)
-            # raw_file, enh_file = build_filenames(today)
+            today = time.strftime(DATE_FMT)
+            ensure_output_paths(today)
+            raw_file, enh_file = build_filenames(today)
 
             enhanced_audio, enhanced_sr, raw_file, enh_file = (
                 enhance_utterance(
@@ -86,8 +85,8 @@ def run_recording_loop(
                     model,
                     df_state,
                     target_sr,
-                    None,  # raw_filepath - file saving disabled
-                    None,  # enhanced_filepath - file saving disabled
+                    raw_file,
+                    enh_file,
                     device=device,
                 )
             )
@@ -162,7 +161,7 @@ def run_recording_loop(
             if not recording and speech_end_time is not None:
                 # No speech for SILENCE_EXIT seconds: exit
                 if current_time - speech_end_time > SILENCE_EXIT:
-                    logger.info("Silence timeout, returning to wake word")
+                    logger.info("Silence timeout, exiting recording loop")
                     return None
 
     except KeyboardInterrupt:

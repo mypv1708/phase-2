@@ -1,88 +1,16 @@
 """ Model loader for speech recognition - loads all models upfront. """
 import logging
 import time
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
-from speechbrain.inference.speaker import SpeakerRecognition
 
-from .config import SPEAKER_DEVICE, STT_DEVICE
+from .config import STT_DEVICE
 
 from .speech_to_text import SpeechToTextEngine
     
 
 logger = logging.getLogger(__name__)
-
-
-def load_speaker_model() -> Optional[SpeakerRecognition]:
-    """Load speaker recognition model."""
-    if SPEAKER_DEVICE:
-        device = SPEAKER_DEVICE
-    else:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    try:
-        logger.info("Loading Speaker Recognition model on %s...", device)
-        start_time = time.perf_counter()
-        
-        model = SpeakerRecognition.from_hparams(
-            source="speechbrain/spkrec-ecapa-voxceleb",
-            run_opts={"device": device},
-        )
-        
-        # Force move model to GPU if CUDA is available and device is "cuda"
-        if device == "cuda" and torch.cuda.is_available():
-            try:
-                # SpeechBrain models are typically nn.Module, use .to() method
-                if hasattr(model, "to"):
-                    model = model.to(torch.device("cuda"))
-                # Verify model is on GPU by checking parameters
-                if hasattr(model, "parameters"):
-                    first_param_device = next(model.parameters()).device
-                    if first_param_device.type != "cuda":
-                        logger.warning(
-                            "Model parameters not on GPU after .to() call. "
-                            "SpeechBrain may handle device internally."
-                        )
-                    else:
-                        logger.info("Model successfully moved to GPU")
-            except Exception as e:
-                logger.warning(
-                    "Failed to explicitly move model to GPU: %s. "
-                    "Model may still work but might be slower.",
-                    e,
-                )
-        
-        load_time = time.perf_counter() - start_time
-        
-        # Verify actual device
-        actual_device = "cpu"
-        try:
-            if hasattr(model, "device"):
-                device_raw = model.device
-                if isinstance(device_raw, str):
-                    actual_device = device_raw
-                else:
-                    actual_device = device_raw.type
-            elif hasattr(model, "parameters"):
-                actual_device = next(model.parameters()).device.type
-        except Exception:
-            pass
-        
-        logger.info(
-            "Speaker Recognition model loaded on %s (requested: %s) in %.2f seconds",
-            actual_device,
-            device,
-            load_time,
-        )
-        return model
-    except Exception as e:
-        logger.warning(
-            "Failed to load Speaker Recognition model "
-            "(speaker verification disabled): %s",
-            e,
-        )
-        return None
 
 
 def load_stt_model(preload: bool = True) -> "SpeechToTextEngine":
@@ -117,16 +45,13 @@ def load_stt_model(preload: bool = True) -> "SpeechToTextEngine":
         raise RuntimeError(f"STT engine initialization failed: {e}") from e
 
 
-def preload_all_models() -> Tuple[Optional[SpeakerRecognition], "SpeechToTextEngine"]:
+def preload_all_models() -> Tuple[None, "SpeechToTextEngine"]:
     """Preload all speech recognition models upfront."""
     logger.info("=" * 60)
-    logger.info("Preloading all Speech Recognition models...")
+    logger.info("Preloading Speech Recognition models...")
     logger.info("=" * 60)
     
     total_start = time.perf_counter()
-    
-    # Load speaker model
-    speaker_model = load_speaker_model()
     
     # Load STT model (required, will raise if fails)
     stt_engine = load_stt_model(preload=True)
@@ -135,8 +60,8 @@ def preload_all_models() -> Tuple[Optional[SpeakerRecognition], "SpeechToTextEng
     
     logger.info("=" * 60)
     logger.info(
-        "All Speech Recognition models loaded in %.2f seconds", total_time
+        "Speech Recognition models loaded in %.2f seconds", total_time
     )
     logger.info("=" * 60)
     
-    return speaker_model, stt_engine
+    return None, stt_engine

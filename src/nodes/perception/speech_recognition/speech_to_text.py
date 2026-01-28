@@ -74,15 +74,16 @@ class SpeechToTextEngine:
             raise RuntimeError(f"STT model initialization failed: {e}") from e
 
     def preload(self) -> None:
-        """ Preload the model immediately to avoid first-use delay. """
+        """Preload the model immediately to avoid first-use delay."""
         if not self._initialized:
             self._initialize()
         
         # Warm up the model with a dummy inference to ensure it's fully loaded
         if self._initialized and self.model is not None:
             try:
-                # Create a minimal dummy audio input for warm-up
-                dummy_audio = np.zeros((1600,), dtype=np.float32)  # 0.1 second at 16kHz
+                # Create a more realistic dummy audio input for warm-up (white noise)
+                # This helps prevent hallucination on first real input
+                dummy_audio = np.random.normal(0, 0.01, (STT_SAMPLE_RATE * 2,)).astype(np.float32)  # 2 seconds
                 with torch.inference_mode():
                     inputs = self.processor(
                         dummy_audio,
@@ -91,13 +92,13 @@ class SpeechToTextEngine:
                         padding=True
                     )
                     input_features = inputs["input_features"].to(self.device)
-                    # Just run a forward pass to warm up
+                    # Run a forward pass to warm up
                     _ = self.model.generate(
                         input_features,
                         language=self._language,
                         task=STT_TASK,
-                        num_beams=1,  # Use minimal beams for warm-up
-                        max_new_tokens=1,  # Minimal tokens
+                        num_beams=1,
+                        max_new_tokens=10,
                     )
                 logger.debug("STT model warmed up successfully")
             except Exception as e:

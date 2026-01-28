@@ -1,8 +1,3 @@
-# Speaker verification
-ENROLL_FILE = "assets/ref-voices/my-ref-voice-vi.wav"
-SPEAKER_DEVICE = None
-SPEAKER_THRESHOLD = 0.15  # Verification threshold (0.0-1.0)
-
 # Speech-to-Text (PhoWhisper - Vietnamese fine-tuned Whisper via Hugging Face Transformers)
 #
 # PhoWhisper models (Vietnamese optimized): 
@@ -19,3 +14,8 @@ STT_TASK = "transcribe"  # "transcribe" or "translate"
 STT_NUM_BEAMS = 5  # Beam search size (1 = greedy/fastest, 5 = default/slower)
 STT_MAX_NEW_TOKENS = 128  # Maximum tokens to generate
 STT_USE_FP16 = True  # Use FP16 for GPU (faster, less memory)
+
+# STT validation thresholds
+STT_MIN_DURATION = 0.5  # Minimum audio duration in seconds to process (skip if shorter)
+STT_SILENT_THRESHOLD = 0.01  # RMS threshold for silent detection
+STT_MAX_SILENT_RATIO = 0.7  # Skip STT if > 70% of audio is silent
