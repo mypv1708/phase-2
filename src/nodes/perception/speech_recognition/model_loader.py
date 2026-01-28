@@ -32,12 +32,12 @@ def load_stt_model(preload: bool = True) -> "SpeechToTextEngine":
             load_time = time.perf_counter() - start_time
             logger.info(
                 "Speech-to-Text engine ready (preloaded on %s in %.2f seconds)",
-                device,
+                engine.device_type,
                 load_time,
             )
         else:
             logger.info(
-                "Speech-to-Text engine ready (lazy loading on %s)", device
+                "Speech-to-Text engine ready (lazy loading on %s)", engine.device_type
             )
         return engine
     except Exception as e:

@@ -1,9 +1,6 @@
 import logging
 import sys
 
-import numpy as np
-from libdf import DF
-
 from .mic_driver.model_loader import load_all_models
 from .mic_driver.recording import run_recording_loop
 from .speech_recognition_node import SpeechRecognitionNode

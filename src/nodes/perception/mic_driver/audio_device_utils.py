@@ -1,140 +1,87 @@
 """Audio device utilities for handling device conflicts and validation."""
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional
+
 import pyaudio
-import sounddevice as sd
 
 logger = logging.getLogger(__name__)
 
-# Global flag to track audio device usage
+# Global shared PyAudio instance to avoid conflicts
 _pyaudio_instance: Optional[pyaudio.PyAudio] = None
-_sounddevice_in_use = False
 
 
-def check_audio_devices_available() -> Tuple[bool, bool]:
+def check_pyaudio_available() -> bool:
     """
-    Check if audio devices are available.
+    Check if PyAudio is available (imported successfully).
 
     Returns:
-        Tuple of (pyaudio_available, sounddevice_available)
+        True if PyAudio is available, False otherwise
     """
-    pyaudio_available = pyaudio is not None
-    sounddevice_available = sd is not None
-
-    if not pyaudio_available:
+    if pyaudio is None:
         logger.warning("PyAudio not available")
-    if not sounddevice_available:
-        logger.warning("sounddevice not available")
-
-    return pyaudio_available, sounddevice_available
-
-
-def list_audio_devices() -> Tuple[List[dict], List[dict]]:
-    """
-    List available audio input devices.
-
-    Returns:
-        Tuple of (pyaudio_devices, sounddevice_devices)
-    """
-    pyaudio_devices = []
-    sounddevice_devices = []
-
-    if pyaudio is not None:
-        try:
-            pa = pyaudio.PyAudio()
-            device_count = pa.get_device_count()
-            for i in range(device_count):
-                info = pa.get_device_info_by_index(i)
-                if info["maxInputChannels"] > 0:
-                    pyaudio_devices.append({
-                        "index": i,
-                        "name": info["name"],
-                        "channels": info["maxInputChannels"],
-                        "sample_rate": int(info["defaultSampleRate"]),
-                    })
-            pa.terminate()
-        except Exception as e:
-            logger.warning("Failed to list PyAudio devices: %s", e)
-
-    if sd is not None:
-        try:
-            devices = sd.query_devices()
-            for i, device in enumerate(devices):
-                if device["max_input_channels"] > 0:
-                    sounddevice_devices.append({
-                        "index": i,
-                        "name": device["name"],
-                        "channels": device["max_input_channels"],
-                        "sample_rate": int(device["default_samplerate"]),
-                    })
-        except Exception as e:
-            logger.warning("Failed to list sounddevice devices: %s", e)
-
-    return pyaudio_devices, sounddevice_devices
+        return False
+    return True
 
 
 def validate_audio_device(
     device_index: Optional[int] = None,
     sample_rate: int = 48000,
     channels: int = 1,
-    use_pyaudio: bool = True,
 ) -> bool:
     """
     Validate that an audio device can be opened with given parameters.
+    Uses shared PyAudio instance for efficiency.
 
     Args:
         device_index: Device index (None for default)
         sample_rate: Required sample rate
         channels: Required number of channels
-        use_pyaudio: Use PyAudio (True) or sounddevice (False)
 
     Returns:
         True if device is valid, False otherwise
     """
-    if use_pyaudio:
-        if pyaudio is None:
-            logger.error("PyAudio not available")
-            return False
+    if pyaudio is None:
+        logger.error("PyAudio not available")
+        return False
+    
+    # Use shared instance if available, otherwise create temporary one
+    pa = get_shared_pyaudio_instance()
+    use_shared = pa is not None
+    
+    if not use_shared:
         try:
             pa = pyaudio.PyAudio()
-            stream = pa.open(
-                format=pyaudio.paInt16,
-                channels=channels,
-                rate=sample_rate,
-                input=True,
-                frames_per_buffer=1024,
-                input_device_index=device_index,
-            )
-            stream.close()
-            pa.terminate()
-            return True
         except Exception as e:
-            logger.warning(
-                "PyAudio device validation failed (index=%s): %s",
-                device_index,
-                e,
-            )
+            logger.error("Failed to create PyAudio instance: %s", e)
             return False
-    else:
-        if sd is None:
-            logger.error("sounddevice not available")
-            return False
-        try:
-            with sd.InputStream(
-                device=device_index,
-                samplerate=sample_rate,
-                channels=channels,
-                blocksize=1024,
-            ):
+    
+    try:
+        stream = pa.open(
+            format=pyaudio.paInt16,
+            channels=channels,
+            rate=sample_rate,
+            input=True,
+            frames_per_buffer=1024,
+            input_device_index=device_index,
+        )
+        stream.close()
+        return True
+    except Exception as e:
+        logger.warning(
+            "Audio device validation failed (index=%s, rate=%d, channels=%d): %s",
+            device_index,
+            sample_rate,
+            channels,
+            e,
+        )
+        return False
+    finally:
+        # Only terminate if we created a temporary instance
+        if not use_shared and pa is not None:
+            try:
+                pa.terminate()
+            except Exception:
                 pass
-            return True
-        except Exception as e:
-            logger.warning(
-                "sounddevice validation failed (index=%s): %s",
-                device_index,
-                e,
-            )
-            return False
 
 
 def get_shared_pyaudio_instance() -> Optional[pyaudio.PyAudio]:
@@ -162,7 +109,7 @@ def get_shared_pyaudio_instance() -> Optional[pyaudio.PyAudio]:
 
 def release_audio_resources() -> None:
     """Release all audio resources."""
-    global _pyaudio_instance, _sounddevice_in_use
+    global _pyaudio_instance
 
     if _pyaudio_instance is not None:
         try:
@@ -171,17 +118,4 @@ def release_audio_resources() -> None:
             logger.debug("Released shared PyAudio instance")
         except Exception as e:
             logger.warning("Error releasing PyAudio: %s", e)
-
-    _sounddevice_in_use = False
-
-
-def mark_sounddevice_in_use() -> None:
-    """Mark sounddevice as in use to prevent conflicts."""
-    global _sounddevice_in_use
-    _sounddevice_in_use = True
-
-
-def is_sounddevice_in_use() -> bool:
-    """Check if sounddevice is currently in use."""
-    return _sounddevice_in_use
 

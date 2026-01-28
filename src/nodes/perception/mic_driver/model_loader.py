@@ -30,7 +30,7 @@ def load_deepfilternet() -> Tuple[torch.nn.Module, DF, int, str]:
         
         target_sr = df_state.sr()
         device = next(model.parameters()).device
-        device_str = str(device)
+        device_str = "GPU" if device.type == "cuda" else "CPU"
         
         # Verify device matches expectation
         if device_preference == "cuda" and device.type == "cpu":
@@ -68,7 +68,7 @@ def load_deepfilternet() -> Tuple[torch.nn.Module, DF, int, str]:
                 )
                 target_sr = df_state.sr()
                 device = next(model.parameters()).device
-                device_str = str(device)
+                device_str = "GPU" if device.type == "cuda" else "CPU"
                 logger.info(
                     "DeepFilterNet loaded on CPU fallback: %d Hz, device=%s",
                     target_sr,

@@ -4,14 +4,10 @@ from collections import deque
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
-import torch
-
-
 from libdf import DF
 
 from .config import (
     RATE,
-    DATE_FMT,
     FRAME_SIZE,
     MAX_RECORDING_SECONDS,
     PRE_BUFFER_FRAMES,
@@ -21,7 +17,6 @@ from .config import (
 )
 from .audio import init_audio_stream
 from .enhance import enhance_utterance
-from .paths import build_filenames, ensure_output_paths
 
 logger = logging.getLogger(__name__)
 
@@ -75,18 +70,14 @@ def run_recording_loop(
                 _reset_recording_state()
                 return
 
-            today = time.strftime(DATE_FMT)
-            ensure_output_paths(today)
-            raw_file, enh_file = build_filenames(today)
-
-            enhanced_audio, enhanced_sr, raw_file, enh_file = (
+            enhanced_audio, enhanced_sr, _, _ = (
                 enhance_utterance(
                     recorded_frames,
                     model,
                     df_state,
                     target_sr,
-                    raw_file,
-                    enh_file,
+                    raw_filepath=None,
+                    enhanced_filepath=None,
                     device=device,
                 )
             )
