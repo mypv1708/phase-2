@@ -122,10 +122,18 @@ def enhance_utterance(
             skip_reason = "mostly silent"
     
     if should_skip:
+        # Get device info even when skipping
+        try:
+            model_device = next(model.parameters()).device
+            device_str = "GPU" if model_device.type == "cuda" else "CPU"
+        except Exception:
+            device_str = "CPU"
+        
         logger.info(
-            "Skipping enhancement: %s (duration: %.2fs)",
+            "Skipping enhancement: %s (duration: %.2fs, device=%s)",
             skip_reason,
             audio_duration,
+            device_str,
         )
         if audio_np is None:
             audio_np = audio_tensor.squeeze(0).cpu().numpy() if audio_tensor.ndim > 1 else audio_tensor.cpu().numpy()

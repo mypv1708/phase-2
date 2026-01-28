@@ -4,6 +4,7 @@ from collections import deque
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
+import torch
 from libdf import DF
 
 from .config import (

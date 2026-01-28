@@ -59,7 +59,7 @@ class MicDriverNode:
             logger.exception("MicDriverNode error: %s", e)
             raise
 
-    def _on_utterance(self, audio: np.ndarray, sample_rate: int) -> bool:
+    def _on_utterance(self, audio: "np.ndarray", sample_rate: int) -> bool:
         """
         Process audio utterance through perception pipeline:
         1. Speech-to-Text (STT)
