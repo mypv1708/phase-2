@@ -88,12 +88,12 @@ def enhance_utterance(
     if not recorded_frames:
         raise ValueError("recorded_frames cannot be empty")
 
-    if raw_filepath:
-        try:
-            save_wave(recorded_frames, raw_filepath)
-            logger.info("Saved raw audio: %s", raw_filepath)
-        except Exception:
-            logger.exception("Failed to save raw audio")
+    # if raw_filepath:
+    #     try:
+    #         save_wave(recorded_frames, raw_filepath)
+    #         logger.info("Saved raw audio: %s", raw_filepath)
+    #     except Exception:
+    #         logger.exception("Failed to save raw audio")
 
     audio_tensor = convert_frames_to_tensor(recorded_frames)
     audio_tensor = audio_tensor.cpu()
@@ -188,11 +188,11 @@ def enhance_utterance(
         except Exception:
             pass
 
-    if enhanced_filepath:
-        try:
-            sf.write(enhanced_filepath, enhanced_np, target_sr)
-            logger.info("Saved enhanced audio: %s", enhanced_filepath)
-        except Exception:
-            logger.exception("Failed to save enhanced audio")
+    # if enhanced_filepath:
+    #     try:
+    #         sf.write(enhanced_filepath, enhanced_np, target_sr)
+    #         logger.info("Saved enhanced audio: %s", enhanced_filepath)
+    #     except Exception:
+    #         logger.exception("Failed to save enhanced audio")
 
     return enhanced_np, target_sr, raw_filepath, enhanced_filepath
