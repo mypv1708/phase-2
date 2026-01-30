@@ -13,7 +13,9 @@ def main():
     setup_logging()
     
     print("=" * 60)
-    print("Mic Driver - Wake Word Detection & Audio Enhancement")
+    print("Voice Assistant Robot - Complete Pipeline")
+    print("=" * 60)
+    print("Pipeline: Audio → STT → Intent Classification → Response")
     print("=" * 60)
     print()
     

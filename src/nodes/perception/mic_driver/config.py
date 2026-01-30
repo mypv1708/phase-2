@@ -23,6 +23,10 @@ PRE_BUFFER_FRAMES = PRE_BUFFER_MS // FRAME_DURATION_MS
 SILENCE_EXIT = 35.0
 MAX_RECORDING_SECONDS = 30.0
 
+# Post-resume grace period: ignore audio for this duration after resuming
+# This prevents capturing echo/reverb from TTS playback
+POST_RESUME_IGNORE_MS = 300  # 0.5 seconds
+
 # DeepFilterNet model config
 DF_POST_FILTER = True
 DF_LOG_LEVEL = "WARNING"

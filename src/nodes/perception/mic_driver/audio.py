@@ -14,7 +14,6 @@ from .config import (
     FORMAT,
     FRAME_SIZE,
     RATE,
-    SAMPLE_WIDTH,
     VAD_MODE,
 )
 

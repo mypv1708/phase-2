@@ -1,0 +1,10 @@
+# TTS Service dependencies (Python 3.9+)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# TTS Engine
+piper-tts>=1.2.0
+
+# Audio Playback
+sounddevice>=0.4.6
+

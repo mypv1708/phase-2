@@ -1,3 +1,4 @@
+# OS
 .DS_Store
 Thumbs.db
 
@@ -5,6 +6,13 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+
+# Python packaging
+dist/
+build/
+*.egg-info/
+*.egg
 
 # ML/AI Model files (large files)
 *.gguf
@@ -16,17 +24,28 @@ __pycache__/
 *.h5
 *.ckpt
 
+# Huggingface cache
+.cache/
+
 # Processed and raw data
 assets/processed/
 assets/raw/
 
+# Audio files (generated)
+*.wav
+*.mp3
+*.flac
+
 # Environments
 venv/
+venv39/
 .venv/
+env/
 
 # Environment variables
 .env
 *.env
+.env.*
 
 # Logs
 *.log
@@ -37,8 +56,20 @@ logs/
 .idea/
 *.swp
 *.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
 
 # Temporary files
 *.tmp
 *.temp
 *.cache
+tmp/
+temp/

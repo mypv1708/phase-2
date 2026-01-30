@@ -1,11 +1,11 @@
 import logging
 import time
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
-import soundfile as sf
 import torch
 from df.enhance import enhance
+from libdf import DF
 
 from .config import (
     FRAME_DURATION_MS,
@@ -15,8 +15,6 @@ from .config import (
     MAX_SILENT_RATIO,
     SILENT_THRESHOLD,
 )
-
-from libdf import DF
 
 FRAME_DURATION_SEC = FRAME_DURATION_MS / MILLISECONDS_PER_SECOND
 
@@ -80,19 +78,15 @@ def enhance_utterance(
     model: torch.nn.Module,
     df_state: "DF",
     target_sr: int,
-    raw_filepath: Optional[str] = None,
-    enhanced_filepath: Optional[str] = None,
-    device: Optional[Union[torch.device, str]] = None,
-) -> Tuple[np.ndarray, int, Optional[str], Optional[str]]:
+) -> Tuple[np.ndarray, int]:
+    """
+    Enhance audio utterance using DeepFilterNet.
+    
+    Returns:
+        Tuple of (enhanced_audio, sample_rate)
+    """
     if not recorded_frames:
         raise ValueError("recorded_frames cannot be empty")
-
-    # if raw_filepath:
-    #     try:
-    #         save_wave(recorded_frames, raw_filepath)
-    #         logger.info("Saved raw audio: %s", raw_filepath)
-    #     except Exception:
-    #         logger.exception("Failed to save raw audio")
 
     audio_tensor = convert_frames_to_tensor(recorded_frames)
     audio_tensor = audio_tensor.cpu()
@@ -195,11 +189,4 @@ def enhance_utterance(
         except Exception:
             pass
 
-    # if enhanced_filepath:
-    #     try:
-    #         sf.write(enhanced_filepath, enhanced_np, target_sr)
-    #         logger.info("Saved enhanced audio: %s", enhanced_filepath)
-    #     except Exception:
-    #         logger.exception("Failed to save enhanced audio")
-
-    return enhanced_np, target_sr, raw_filepath, enhanced_filepath
+    return enhanced_np, target_sr

@@ -105,17 +105,3 @@ def get_shared_pyaudio_instance() -> Optional[pyaudio.PyAudio]:
             return None
 
     return _pyaudio_instance
-
-
-def release_audio_resources() -> None:
-    """Release all audio resources."""
-    global _pyaudio_instance
-
-    if _pyaudio_instance is not None:
-        try:
-            _pyaudio_instance.terminate()
-            _pyaudio_instance = None
-            logger.debug("Released shared PyAudio instance")
-        except Exception as e:
-            logger.warning("Error releasing PyAudio: %s", e)
-

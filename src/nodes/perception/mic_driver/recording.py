@@ -15,22 +15,24 @@ from .config import (
     SILENCE_EXIT,
     SILENCE_LIMIT,
     SAMPLE_WIDTH,
+    POST_RESUME_IGNORE_MS,
 )
 from .audio import init_audio_stream
 from .enhance import enhance_utterance
+from .recording_control import is_recording_paused, should_clear_buffer, pause_recording
 
 logger = logging.getLogger(__name__)
 
 EXPECTED_FRAME_SIZE = FRAME_SIZE * SAMPLE_WIDTH
 FRAMES_PER_SECOND = RATE / FRAME_SIZE
 SILENCE_FRAMES_THRESHOLD = int(SILENCE_LIMIT * FRAMES_PER_SECOND)
+POST_RESUME_IGNORE_FRAMES = int(POST_RESUME_IGNORE_MS / 1000 * FRAMES_PER_SECOND)
 
 
 def run_recording_loop(
     model: torch.nn.Module,
     df_state: "DF",
     target_sr: int,
-    device: str,
     on_utterance: Optional[Callable[[np.ndarray, int], bool]] = None,
 ) -> Optional[Tuple[np.ndarray, int]]:
     pa = None
@@ -54,8 +56,7 @@ def run_recording_loop(
     consecutive_silence_frames = 0
 
     def _reset_recording_state() -> None:
-        nonlocal pre_buffer, recorded_frames, recording
-        nonlocal recording_start_time, consecutive_silence_frames
+        nonlocal recording, recording_start_time, consecutive_silence_frames
         pre_buffer.clear()
         recorded_frames.clear()
         recording = False
@@ -65,25 +66,32 @@ def run_recording_loop(
     def _process_and_reset() -> None:
         nonlocal speech_end_time, last_result, stop_requested
         speech_end_time = time.time()
+        
+        # CRITICAL: Stop stream IMMEDIATELY to prevent capturing TTS audio
+        # This must happen BEFORE any processing/callback
+        pause_recording()
+        if stream.is_active():
+            try:
+                stream.stop_stream()
+                logger.debug("Audio stream stopped for processing")
+            except Exception as e:
+                logger.debug("Failed to stop stream: %s", e)
+        
         try:
             if not recorded_frames:
                 logger.warning("No frames recorded, skipping enhancement")
                 _reset_recording_state()
                 return
 
-            enhanced_audio, enhanced_sr, _, _ = (
-                enhance_utterance(
-                    recorded_frames,
-                    model,
-                    df_state,
-                    target_sr,
-                    raw_filepath=None,
-                    enhanced_filepath=None,
-                    device=device,
-                )
+            enhanced_audio, enhanced_sr = enhance_utterance(
+                recorded_frames,
+                model,
+                df_state,
+                target_sr,
             )
             last_result = (enhanced_audio, enhanced_sr)
             if on_utterance is not None:
+                # Callback handles TTS - will resume recording when done
                 if on_utterance(enhanced_audio, enhanced_sr):
                     stop_requested = True
         except Exception as e:
@@ -92,9 +100,75 @@ def run_recording_loop(
             _reset_recording_state()
 
     try:
+        was_paused = False
+        ignore_frames_remaining = 0  # Counter for post-resume grace period
+        
         while True:
-            frame = stream.read(FRAME_SIZE, exception_on_overflow=False)
+            # Check pause state BEFORE reading (to avoid blocking while paused)
+            if is_recording_paused():
+                # Stop stream to prevent buffering audio during TTS playback
+                if stream.is_active():
+                    try:
+                        stream.stop_stream()
+                        logger.debug("Audio stream stopped during pause")
+                    except Exception as e:
+                        logger.debug("Failed to stop stream: %s", e)
+                
+                was_paused = True
+                time.sleep(0.05)
+                continue
+            
+            # Check if we just resumed from pause - clear all buffers and restart stream
+            # Consume both flags to avoid double-triggering
+            need_reset = was_paused
+            clear_flag = should_clear_buffer()  # Always consume the flag
+            need_reset = need_reset or clear_flag
+            
+            if need_reset:
+                was_paused = False
+                pre_buffer.clear()
+                recorded_frames.clear()
+                recording = False
+                recording_start_time = None
+                consecutive_silence_frames = 0
+                speech_end_time = None
+                
+                # Set grace period to ignore audio immediately after resume
+                # This prevents capturing echo/reverb from TTS playback
+                ignore_frames_remaining = POST_RESUME_IGNORE_FRAMES
+                
+                # Restart stream to ensure clean state (no buffered audio from TTS playback)
+                try:
+                    if not stream.is_active():
+                        stream.start_stream()
+                        logger.debug("Audio stream restarted")
+                    
+                    # Flush any remaining buffer
+                    available = stream.get_read_available()
+                    if available > 0:
+                        _ = stream.read(available, exception_on_overflow=False)
+                        logger.debug("Flushed %d frames from audio buffer", available)
+                except Exception as e:
+                    logger.debug("Stream restart/flush: %s", e)
+                
+                logger.info("Recording resumed - ignoring %d frames (%.1fs grace period)", 
+                           ignore_frames_remaining, POST_RESUME_IGNORE_MS / 1000)
+                continue  # Skip this iteration to ensure clean start
+            
+            # Read audio frame
+            try:
+                frame = stream.read(FRAME_SIZE, exception_on_overflow=False)
+            except Exception as e:
+                logger.warning("Stream read error: %s", e)
+                time.sleep(0.1)
+                continue
+                
             if len(frame) != EXPECTED_FRAME_SIZE:
+                continue
+
+            # Grace period: ignore frames immediately after resume to avoid TTS echo
+            if ignore_frames_remaining > 0:
+                ignore_frames_remaining -= 1
                 continue
 
             current_time = time.time()
@@ -128,6 +202,8 @@ def run_recording_loop(
                     _process_and_reset()
                     if stop_requested:
                         return last_result
+                    # After processing, set was_paused to trigger buffer clear on next iteration
+                    was_paused = True
                     continue
 
                 recorded_frames.append(frame)
@@ -149,6 +225,9 @@ def run_recording_loop(
                         _process_and_reset()
                         if stop_requested:
                             return last_result
+                        # After processing, set was_paused to trigger buffer clear on next iteration
+                        was_paused = True
+                        continue
 
             if not recording and speech_end_time is not None:
                 # No speech for SILENCE_EXIT seconds: exit
@@ -174,4 +253,3 @@ def run_recording_loop(
                 pa.terminate()
             except Exception as e:
                 logger.warning("Error terminating PyAudio: %s", e)
-
