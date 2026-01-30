@@ -100,3 +100,35 @@ ENDING_PARTICLES = {"nhé", "nha", "nhá", "nè", "hen", "ha", "á", "ạ", "ơi
 
 NOISE_WORDS = {"ơ", "ờ", "à", "ừ", "ư", "hử", "hả", "gì", "sao"}
 
+# =============================================================================
+# STOP PATTERNS
+# =============================================================================
+INTENT_STOP = "stop"
+
+STOP_WORDS = [
+    # Basic stop
+    "dừng", "dừng lại", "dừng ngay",
+    "stop", "ngừng", "ngừng lại",
+    # Stand still
+    "đứng lại", "đứng yên", "đứng im",
+    # Cancel
+    "thôi", "thôi đi", "thôi nào",
+    "hủy", "hủy bỏ", "bỏ đi",
+    # Emergency
+    "dừng khẩn cấp", "khẩn cấp",
+    # Don't follow
+    "đừng theo", "đừng đi theo", "đừng theo tôi", "đừng đi theo tôi",
+    "không theo", "không đi theo",
+    # Don't move
+    "đừng đi", "đừng đi nữa",
+]
+
+# Polite prefixes
+STOP_PREFIXES = [
+    "robot", "này", "ê", "ơi", "nè",
+    "làm ơn", "xin hãy", "xin", "vui lòng", "hãy",
+]
+
+# Suffixes/particles to strip
+STOP_SUFFIXES = {"đi", "lại", "ngay", "liền", "luôn", "nhé", "nha", "ạ", "đã", "nữa", "rồi"}
+

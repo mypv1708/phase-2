@@ -8,3 +8,4 @@ piper-tts>=1.2.0
 # Audio Playback
 sounddevice>=0.4.6
 
+numpy==1.26.4
