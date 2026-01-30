@@ -6,7 +6,7 @@
 #   "vinai/PhoWhisper-medium" (more accurate)
 #   "vinai/PhoWhisper-large" (most accurate, slower)
 # Original Whisper models: "openai/whisper-tiny", "openai/whisper-base", etc.
-STT_MODEL_ID = "vinai/PhoWhisper-tiny"  # PhoWhisper base model optimized for Vietnamese
+STT_MODEL_ID = "vinai/PhoWhisper-base"  # PhoWhisper base model optimized for Vietnamese
 STT_SAMPLE_RATE = 16000
 STT_DEVICE = None  # None for auto-detection
 STT_LANGUAGE = "vi"  # "vi" for Vietnamese (PhoWhisper is optimized for Vietnamese)
